@@ -1,0 +1,28 @@
+{
+  "name": "heroforce",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite apps/web --config apps/web/vite.config.ts --mode demo",
+    "dev:web": "npm run dev -w @heroforce/web",
+    "dev:api": "npm run dev -w @heroforce/api",
+    "dev:demo": "npm run dev:demo -w @heroforce/web -- --host 0.0.0.0",
+    "build": "npm run build --workspaces",
+    "build:demo": "npm run build:demo -w @heroforce/web",
+    "test": "npm run test --workspaces --if-present",
+    "seed": "npm run seed -w @heroforce/api",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "admin:create": "npm run admin:create -w @heroforce/api"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}

@@ -1,0 +1,54 @@
+name: heroforce
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-heroforce}
+      POSTGRES_USER: ${POSTGRES_USER:-heroforce}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-heroforce-only}
+    ports: ['127.0.0.1:5432:5432']
+    volumes: ['heroforce_data:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-heroforce}:${POSTGRES_PASSWORD:-local-heroforce-only}@db:5432/${POSTGRES_DB:-heroforce}
+      JWT_SECRET: ${JWT_SECRET:-local-development-change-this-to-a-long-random-secret}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173,http://localhost:8080}
+      NODE_ENV: ${NODE_ENV:-development}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@heroforce.dev}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Hero@12345}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      DB_SSL: 'false'
+      PORT: '3000'
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports: ['8080:80']
+    depends_on:
+      api: { condition: service_healthy }
+volumes:
+  heroforce_data:
